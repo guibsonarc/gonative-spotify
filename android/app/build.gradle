@@ -102,7 +102,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.spotifyapp"
+        applicationId "com.spotifyclone"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
