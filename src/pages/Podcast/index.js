@@ -2,6 +2,10 @@ import React, { Component } from 'react';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import PropTypes from 'prop-types';
 
+import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
+import PlayerActions from '~/store/ducks/player';
+
 import {
   Container,
   EpisodeList,
@@ -17,19 +21,23 @@ import {
   Author,
 } from './styles';
 
-export default class Podcast extends Component {
+class Podcast extends Component {
+  static defaultProps = {
+    currentEpisode: null,
+  }
+
   static propTypes = {
     navigation: PropTypes.shape({
       navigate: PropTypes.func,
       goBack: PropTypes.func,
       getParam: PropTypes.func,
     }).isRequired,
-    podcasts: PropTypes.shape({
-      data: PropTypes.arrayOf(PropTypes.shape),
-    }).isRequired,
+    currentEpisode: PropTypes.oneOfType([
+      () => null,
+      PropTypes.shape({ id: PropTypes.string }),
+    ]),
+    setPodcastRequest: PropTypes.func.isRequired,
   }
-
-  componentDidMount() { }
 
   handleBack = () => {
     const { navigation } = this.props;
@@ -37,8 +45,15 @@ export default class Podcast extends Component {
     navigation.goBack();
   }
 
+  handlePlay = (episodeId) => {
+    const { setPodcastRequest, navigation } = this.props;
+    const podcast = navigation.getParam('podcast');
+
+    setPodcastRequest(podcast, episodeId);
+  }
+
   render() {
-    const { navigation } = this.props;
+    const { navigation, currentEpisode } = this.props;
     const podcast = navigation.getParam('podcast');
 
     return (
@@ -54,7 +69,7 @@ export default class Podcast extends Component {
 
               <PodcastTitle>{podcast.title}</PodcastTitle>
 
-              <PlayButton onPress={() => {}}>
+              <PlayButton onPress={() => this.handlePlay()}>
                 <PlayButtonText>REPRODUZIR</PlayButtonText>
               </PlayButton>
             </PodcastDetails>
@@ -62,8 +77,10 @@ export default class Podcast extends Component {
           data={podcast.tracks}
           keyExtractor={episode => String(episode.id)}
           renderItem={({ item: episode }) => (
-            <Episode>
-              <Title>{episode.title}</Title>
+            <Episode onPress={() => this.handlePlay(episode.id)}>
+              <Title active={currentEpisode && currentEpisode.id === episode.id}>
+                {episode.title}
+              </Title>
               <Author>{episode.artist}</Author>
             </Episode>
           )}
@@ -72,3 +89,13 @@ export default class Podcast extends Component {
     );
   }
 }
+
+const mapStateToProps = state => ({
+  currentEpisode: state.player.podcast
+    ? state.player.podcast.tracks.find(episode => episode.id === state.player.current)
+    : null,
+});
+
+const mapDispatchToProps = dispatch => bindActionCreators(PlayerActions, dispatch);
+
+export default connect(mapStateToProps, mapDispatchToProps)(Podcast);
